@@ -4,111 +4,103 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>波羅的海+赫爾辛基 12天行程地圖</title>
+
 <!-- Leaflet CSS -->
-<link
-  rel="stylesheet"
-  href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
 <style>
   html, body {
     margin:0; padding:0; height:100%;
     font-family: Arial, sans-serif;
     -webkit-tap-highlight-color: transparent;
   }
+
+  /* 地圖全螢幕 */
   #map {
     position: fixed;
     top:0; bottom:0; left:0; right:0;
     z-index: 1;
   }
+
+  /* 側邊欄 */
   #sidebar {
     position: fixed;
     top: 0; bottom: 0; left: 0;
-    width: 280px;
-    max-width: 80vw;
+    width: 300px;
+    max-width: 86vw;
     background: #fff;
     overflow-y: auto;
-    box-shadow: 2px 0 5px rgba(0,0,0,0.3);
-    padding: 10px 15px;
-    z-index: 1000;
-    transform: translateX(-300px);
-    transition: transform 0.3s ease;
+    box-shadow: 2px 0 6px rgba(0,0,0,0.25);
+    padding: 12px 14px;
+    z-index: 1100;
+    transform: translateX(-340px);
+    transition: transform 0.28s ease;
   }
-  #sidebar.visible {
-    transform: translateX(0);
-  }
+  #sidebar.visible { transform: translateX(0); }
+
   #toggleSidebarBtn {
     position: fixed;
-    top: 15px; left: 15px;
-    z-index: 1100;
+    top: 12px; left: 12px;
+    z-index: 1200;
     background: #0078d7;
+    color: #fff;
     border: none;
-    color: white;
     padding: 8px 12px;
-    border-radius: 5px;
-    font-weight: bold;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    border-radius: 6px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    font-weight: 700;
   }
-  #toggleSidebarBtn:active {
-    background: #005fa3;
-  }
-  ul.tree, ul.tree ul {
-    list-style: none;
-    padding-left: 1em;
-  }
-  ul.tree {
-    margin: 0;
-  }
-  ul.tree ul {
-    margin-left: 10px;
-  }
-  ul.tree li {
-    margin: 0.3em 0;
-  }
+  #toggleSidebarBtn:active { transform: translateY(1px); }
+
+  ul.tree, ul.tree ul { list-style: none; padding-left: 0.6em; margin:0; }
+  ul.tree { margin-top: 6px; }
+  ul.tree li { margin: 6px 0; }
+
   button.toggle {
     background: none;
     border: none;
     cursor: pointer;
-    font-weight: 600;
-    font-size: 1em;
-    padding: 4px;
-    color: #0078d7;
-    text-align: left;
-    width: 100%;
-  }
-  button.toggle:focus {
-    outline: 2px solid #0078d7;
-  }
-  li.place > button {
-    font-weight: normal;
-    font-size: 0.9em;
-    color: #333;
-    white-space: normal;
-  }
-  .place-name {
-    font-weight: 600;
-  }
-  .desc {
-    font-size: 0.85em;
-    color: #666;
-  }
-  li.expanded > button.toggle {
     font-weight: 700;
+    color: #0b66c2;
+    text-align: left;
+    padding: 6px 6px;
+    width: 100%;
+    font-size: 1rem;
   }
-  @media (max-width: 600px) {
-    #sidebar {
-      width: 80vw;
-    }
+  button.toggle[aria-expanded="true"] { color: #004a8f; }
+
+  li.place > button.place-name {
+    background: none;
+    border: none;
+    text-align: left;
+    padding: 4px 8px;
+    width: 100%;
+    cursor: pointer;
+    color: #222;
+    font-weight: 600;
+  }
+  .desc { font-size: 0.85em; color: #666; margin-left: 8px; margin-top: 2px; }
+
+  /* mobile */
+  @media (max-width: 640px) {
+    #sidebar { width: 86vw; transform: translateX(-120%); }
+    #sidebar.visible { transform: translateX(0); }
   }
 </style>
 </head>
 <body>
+
 <button id="toggleSidebarBtn" aria-label="切換行程側邊欄">行程</button>
-<div id="sidebar" aria-label="行程目錄" role="navigation"></div>
+<nav id="sidebar" aria-label="行程目錄"></nav>
 <div id="map"></div>
 
 <!-- Leaflet JS -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
+/* ======================
+   ===== 行程資料 ======
+   使用你提供的含經緯度完整資料
+   ====================== */
 const itinerary = [
   {
     city: "維爾紐斯 / Vilnius",
@@ -299,123 +291,249 @@ const itinerary = [
   }
 ];
 
-// 預設地圖中心與縮放
-const defaultCenter = [58.6, 24.8];
-const defaultZoom = 6;
-
-const map = L.map('map').setView(defaultCenter, defaultZoom);
-
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  attribution:
-    '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+/* ======================
+   ===== 地圖初始化 =====
+   ====================== */
+const map = L.map("map").setView([59.4370, 24.7536], 6);
+L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+  maxZoom: 19,
+  attribution: '© OpenStreetMap contributors'
 }).addTo(map);
 
-const sidebar = document.getElementById('sidebar');
-const toggleSidebarBtn = document.getElementById('toggleSidebarBtn');
+let currentMarker = null;
+function clearMarker(){
+  if(currentMarker){
+    map.removeLayer(currentMarker);
+    currentMarker = null;
+  }
+}
 
-// 建立行程樹狀目錄
-function createItineraryMenu() {
-  const ul = document.createElement('ul');
-  ul.classList.add('tree');
+/* ======================
+   ===== 側邊欄建構 =====
+   ====================== */
+const sidebar = document.getElementById("sidebar");
+function createPlaceItem(place, cityName){
+  const li = document.createElement("li");
+  li.className = "place";
 
-  itinerary.forEach((cityData, cityIndex) => {
-    const cityLi = document.createElement('li');
-    cityLi.classList.add('city');
+  const btn = document.createElement("button");
+  btn.className = "place-name";
+  btn.type = "button";
+  btn.textContent = place.name_cn + (place.name_en ? " / " + place.name_en : "");
+  btn.title = (place.desc_cn || "") + (place.desc_en ? " / " + place.desc_en : "");
 
-    const cityBtn = document.createElement('button');
-    cityBtn.classList.add('toggle');
-    cityBtn.textContent = cityData.city;
-    cityBtn.setAttribute('aria-expanded', 'false');
-    cityBtn.setAttribute('aria-controls', `city-days-${cityIndex}`);
-    cityBtn.id = `city-btn-${cityIndex}`;
+  btn.addEventListener("click", () => {
+    addMarker(place, cityName);
+    // 點後自動關閉側邊欄（行動裝置友善）
+    sidebar.classList.remove("visible");
+  });
 
-    const daysUl = document.createElement('ul');
-    daysUl.id = `city-days-${cityIndex}`;
-    daysUl.style.display = 'none';
+  li.appendChild(btn);
+  if(place.desc_cn || place.desc_en){
+    const desc = document.createElement("div");
+    desc.className = "desc";
+    desc.innerHTML = (place.desc_cn || "") + (place.desc_en ? "<br>" + place.desc_en : "");
+    li.appendChild(desc);
+  }
+  return li;
+}
 
-    cityBtn.addEventListener('click', () => {
-      const expanded = cityBtn.getAttribute('aria-expanded') === 'true';
-      cityBtn.setAttribute('aria-expanded', String(!expanded));
-      if (daysUl.style.display === 'none') {
-        daysUl.style.display = 'block';
-        cityLi.classList.add('expanded');
-      } else {
-        daysUl.style.display = 'none';
-        cityLi.classList.remove('expanded');
-      }
-    });
+function createDayItem(day, cityName){
+  const li = document.createElement("li");
+  const btn = document.createElement("button");
+  btn.className = "toggle";
+  btn.type = "button";
+  btn.textContent = `${day.day} - ${day.title}`;
+  btn.setAttribute("aria-expanded", "false");
 
-    cityData.days.forEach((dayData, dayIndex) => {
-      const dayLi = document.createElement('li');
+  const ul = document.createElement("ul");
+  ul.style.display = "none";
 
-      const dayBtn = document.createElement('button');
-      dayBtn.classList.add('toggle');
-      dayBtn.textContent = `${dayData.day} - ${dayData.title}`;
-      dayBtn.setAttribute('aria-expanded', 'false');
-      dayBtn.setAttribute('aria-controls', `day-places-${cityIndex}-${dayIndex}`);
-      dayBtn.id = `day-btn-${cityIndex}-${dayIndex}`;
+  btn.addEventListener("click", () => {
+    const expanded = btn.getAttribute("aria-expanded") === "true";
+    btn.setAttribute("aria-expanded", String(!expanded));
+    ul.style.display = expanded ? "none" : "block";
+    li.classList.toggle("expanded");
+  });
 
-      const placesUl = document.createElement('ul');
-      placesUl.id = `day-places-${cityIndex}-${dayIndex}`;
-      placesUl.style.display = 'none';
+  day.places.forEach(place => {
+    ul.appendChild(createPlaceItem(place, cityName));
+  });
 
-      dayBtn.addEventListener('click', () => {
-        const expanded = dayBtn.getAttribute('aria-expanded') === 'true';
-        dayBtn.setAttribute('aria-expanded', String(!expanded));
-        if (placesUl.style.display === 'none') {
-          placesUl.style.display = 'block';
-          dayLi.classList.add('expanded');
-        } else {
-          placesUl.style.display = 'none';
-          dayLi.classList.remove('expanded');
-        }
-      });
+  li.appendChild(btn);
+  li.appendChild(ul);
+  return li;
+}
 
-      dayData.places.forEach(place => {
-        const placeLi = document.createElement('li');
-        placeLi.classList.add('place');
+function createCityItem(city, cityIndex){
+  const li = document.createElement("li");
+  const btn = document.createElement("button");
+  btn.className = "toggle";
+  btn.type = "button";
+  btn.textContent = city.city;
+  btn.setAttribute("aria-expanded", "false");
 
-        const placeBtn = document.createElement('button');
-        placeBtn.textContent = place.name_cn;
-        placeBtn.title = place.desc_cn + (place.desc_en ? ' / ' + place.desc_en : '');
-        placeBtn.classList.add('place-name');
-        placeBtn.type = 'button';
+  const ul = document.createElement("ul");
+  ul.style.display = "none";
 
-        placeBtn.addEventListener('click', () => {
-          openPlaceInGoogleMap(place.name_cn, place.name_en);
-        });
+  btn.addEventListener("click", () => {
+    const expanded = btn.getAttribute("aria-expanded") === "true";
+    btn.setAttribute("aria-expanded", String(!expanded));
+    ul.style.display = expanded ? "none" : "block";
+    li.classList.toggle("expanded");
+  });
 
-        placeLi.appendChild(placeBtn);
-        placesUl.appendChild(placeLi);
-      });
+  city.days.forEach(day => {
+    ul.appendChild(createDayItem(day, city.city));
+  });
 
-      dayLi.appendChild(dayBtn);
-      dayLi.appendChild(placesUl);
-      daysUl.appendChild(dayLi);
-    });
+  li.appendChild(btn);
+  li.appendChild(ul);
+  return li;
+}
 
-    cityLi.appendChild(cityBtn);
-    cityLi.appendChild(daysUl);
-    ul.appendChild(cityLi);
+function buildSidebar(){
+  // clear
+  sidebar.innerHTML = "";
+  const ul = document.createElement("ul");
+  ul.className = "tree";
+
+  itinerary.forEach((city, idx) => {
+    ul.appendChild(createCityItem(city, idx));
   });
 
   sidebar.appendChild(ul);
 }
+buildSidebar();
 
-function openPlaceInGoogleMap(name_cn, name_en) {
-  // 使用城市+景點名查詢 Google Map (優先用英文，失敗用中文)
-  const query = encodeURIComponent(name_en || name_cn);
-  const url = `https://www.google.com/maps/search/?api=1&query=${query}`;
-  window.open(url, '_blank');
+/* ======================
+   ===== 點標記函式 =====
+   ====================== */
+function addMarker(place, cityName = ""){
+  clearMarker();
+  if(!place.lat || !place.lon) return;
+
+  currentMarker = L.marker([place.lat, place.lon]).addTo(map);
+
+  // Google Map 搜尋連結（城市 + 中文名）
+  const query = encodeURIComponent((cityName ? cityName + " " : "") + place.name_cn);
+  const googleMapUrl = `https://www.google.com/maps/search/?api=1&query=${query}`;
+
+  const popupContent = `
+    <strong>${place.name_cn} / ${place.name_en || ""}</strong><br>
+    <em>${place.desc_cn || ""}</em><br>
+    <em>${place.desc_en || ""}</em><br>
+    <a href="${googleMapUrl}" target="_blank" rel="noopener noreferrer">在 Google 地圖中開啟</a>
+  `;
+
+  currentMarker.bindPopup(popupContent).openPopup();
+  map.setView([place.lat, place.lon], 15);
 }
 
-// 側邊欄切換
-toggleSidebarBtn.addEventListener('click', () => {
-  sidebar.classList.toggle('visible');
+/* ======================
+   ===== 側邊欄切換 =====
+   ====================== */
+const toggleBtn = document.getElementById("toggleSidebarBtn");
+toggleBtn.addEventListener("click", () => {
+  sidebar.classList.toggle("visible");
 });
 
-createItineraryMenu();
+/* ======================
+   ===== 自動展開當天行程 =====
+   修正版（更健壯）
+   - tripStartDate: 2025-08-05 為 Day 1
+   - 會計算 dayOffset，並找到對應 cityIndex / dayIndex
+   - 若超出範圍則預設回第一天
+   ====================== */
+const tripStartDate = new Date(2025, 7, 1); // 2025-08-01 (month 0-based)
+function dateOnly(d){ return new Date(d.getFullYear(), d.getMonth(), d.getDate()); }
 
+window.addEventListener("load", () => {
+  try {
+    // 當天日期（本地）
+    const today = dateOnly(new Date());
+    const start = dateOnly(tripStartDate);
+
+    // 計算 offset: 0 => Day 1
+    let dayOffset = Math.floor((today - start) / (1000 * 60 * 60 * 24));
+    if(isNaN(dayOffset) || dayOffset < 0) dayOffset = 0;
+
+    // 計算總天數
+    const totalDays = itinerary.reduce((sum, city) => sum + city.days.length, 0);
+    if(dayOffset >= totalDays) dayOffset = 0; // 超過範圍回到 Day 1
+
+    // 找到 cityIndex 與 dayIndex（在 city 的 day array 內）
+    let remaining = dayOffset;
+    let cityIndex = 0, dayIndex = 0;
+    for(let i=0; i<itinerary.length; i++){
+      const daysCount = itinerary[i].days.length;
+      if(remaining < daysCount){
+        cityIndex = i;
+        dayIndex = remaining;
+        break;
+      } else {
+        remaining -= daysCount;
+      }
+    }
+
+    // 展開對應 city/day 並點選第一個景點（若存在）
+    setTimeout(() => {
+      openCity(cityIndex);
+      openDay(cityIndex, dayIndex);
+      const firstPlaceBtn = getPlaceButton(cityIndex, dayIndex, 0);
+      if(firstPlaceBtn) firstPlaceBtn.click();
+      // 顯示側邊欄（視需要）
+      sidebar.classList.add("visible");
+    }, 250);
+  } catch (e) {
+    console.error("自動展開行程時發生錯誤：", e);
+  }
+});
+
+/* ======================
+   ===== 輔助：打開 city/day 的函式 =====
+   直接操控 DOM 的按鈕避免選取錯誤
+   ====================== */
+function getCityButton(cityIndex){
+  // city buttons are first-level .tree > li > button.toggle
+  const cityButtons = sidebar.querySelectorAll("ul.tree > li > button.toggle");
+  return cityButtons[cityIndex] || null;
+}
+function getDayButton(cityIndex, dayIndex){
+  const cityLi = sidebar.querySelectorAll("ul.tree > li")[cityIndex];
+  if(!cityLi) return null;
+  const dayButtons = cityLi.querySelectorAll("ul > li > button.toggle");
+  return dayButtons[dayIndex] || null;
+}
+function getPlaceButton(cityIndex, dayIndex, placeIndex){
+  const cityLi = sidebar.querySelectorAll("ul.tree > li")[cityIndex];
+  if(!cityLi) return null;
+  const dayLi = cityLi.querySelectorAll("ul > li")[dayIndex];
+  if(!dayLi) return null;
+  const placeBtn = dayLi.querySelectorAll("ul li.place button.place-name")[placeIndex];
+  return placeBtn || null;
+}
+
+function openCity(cityIndex){
+  const btn = getCityButton(cityIndex);
+  if(!btn) return;
+  // if not expanded, click it
+  if(btn.getAttribute("aria-expanded") !== "true"){
+    btn.click();
+  }
+}
+function openDay(cityIndex, dayIndex){
+  openCity(cityIndex);
+  const btn = getDayButton(cityIndex, dayIndex);
+  if(!btn) return;
+  if(btn.getAttribute("aria-expanded") !== "true"){
+    btn.click();
+  }
+}
+
+/* ======================
+   ===== 結束 =====
+   ====================== */
 </script>
 </body>
 </html>
